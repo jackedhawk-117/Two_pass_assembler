@@ -1,6 +1,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+/*
+    authors:    iimashfaaq
+                prachidhingra09
+                jackedhawk117
+*/
 
 // Function to reverse a string in place
 void strreverse(char* begin, char* end) {
