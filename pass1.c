@@ -9,71 +9,91 @@
 */
 
 int main() {
-    char opcode[10],mnemonic[3],operand[10],label[10],code[10];
-    int locctr,start,length;
-    FILE *fp1,*fp2,*fp3,*fp4;
-    fp1=fopen("input.txt","r");
-    fp2=fopen("symtab.txt","w");
-    fp3=fopen("intermediate.txt","w");
-    fp4=fopen("opTab.txt","r");
+    // Variables to store different assembly components and addresses
+    char opcode[10], mnemonic[3], operand[10], label[10], code[10];
+    int locctr, start, length;
+    
+    // File pointers to handle input and output files
+    FILE *fp1, *fp2, *fp3, *fp4;
+    
+    // Open files: input, symbol table, intermediate, and opcode table
+    fp1 = fopen("input.txt", "r");     // Assembly program input
+    fp2 = fopen("symtab.txt", "w");    // Symbol table output
+    fp3 = fopen("intermediate.txt", "w"); // Intermediate file output
+    fp4 = fopen("opTab.txt", "r");     // Opcode table
 
-    // scan the first line (should be start)
-    fscanf(fp1,"%s%s%s",label,opcode,operand);
-    if(strcmp(opcode,"START")==0)
-    {
-        start=atoi(operand);  // Get starting address
-        locctr=start; // set locctr as the starting address
+    // Read the first line of input (expected to contain the START directive)
+    fscanf(fp1, "%s%s%s", label, opcode, operand);
 
-        //print to output and scan next line from input
-        fprintf(fp3,"%s\t%s\t%s\n",label,opcode,operand);
-        fscanf(fp1,"%s%s%s",label,opcode,operand);
-    }
-    else
-        // No start opcode, take locctr as 0
-        locctr=0;
+    // If the first opcode is "START"
+    if (strcmp(opcode, "START") == 0) {
+        start = atoi(operand);  // Convert starting address from string to integer
+        locctr = start;         // Initialize location counter with the starting address
 
-
-    while(strcmp(opcode,"END")!=0)
-    {
-        fprintf(fp3,"%d\t",locctr);
-        if(strcmp(label,"-")!=0)
-        fprintf(fp2,"%s\t%d\n",label,locctr);
-
-        rewind(fp4);  // goto beginning of file
-        fscanf(fp4,"%s",code);  // scan first code
-        while(strcmp(code,"END")!=0)  // check for end opcode
-        {
-        if(strcmp(opcode,code)==0)  // compare all opcodes
-        {
-            locctr+=3;  // 3 bytes
-            break;
-        }
-        fscanf(fp4,"%s",code);
-        }
-        if(strcmp(opcode,"WORD")==0)
-        locctr+=3;  // 1 word = 3 byte
-        else if(strcmp(opcode,"RESW")==0)
-        locctr+=(3*(atoi(operand)));  // n words
-        else if(strcmp(opcode,"RESB")==0)
-        locctr+=(atoi(operand));  // n bytes
-        else if(strcmp(opcode,"BYTE")==0)
-        ++locctr; // 1 byte
-
-        //print to output and scan next line from input
-        fprintf(fp3,"%s\t%s\t%s\n",label,opcode,operand);
-        fscanf(fp1,"%s%s%s",label,opcode,operand);
+        // Write START line to intermediate file
+        fprintf(fp3, "%s\t%s\t%s\n", label, opcode, operand);
+        
+        // Read the next line from the input file
+        fscanf(fp1, "%s%s%s", label, opcode, operand);
+    } else {
+        // If there's no START directive, initialize locctr to 0
+        locctr = 0;
     }
 
-    // END opcode
-    fprintf(fp3,"%d\t%s\t%s\t%s\n",locctr,label,opcode,operand);
-    length=locctr-start;
-    printf("The length of the program is %d",length);
+    // Loop until "END" directive is encountered
+    while (strcmp(opcode, "END") != 0) {
+        // Write the current locctr value to the intermediate file
+        fprintf(fp3, "%d\t", locctr);
 
+        // If there's a label (not "-"), add it to the symbol table with its locctr
+        if (strcmp(label, "-") != 0)
+            fprintf(fp2, "%s\t%d\n", label, locctr);
+
+        // Rewind the opcode table to the beginning
+        rewind(fp4);
+        
+        // Read the first opcode from the opcode table
+        fscanf(fp4, "%s", code);
+        
+        // Search for the opcode in the opcode table
+        while (strcmp(code, "END") != 0) { // Stop if "END" of opTab is reached
+            if (strcmp(opcode, code) == 0) {  // If opcode is found
+                locctr += 3;  // Increment locctr by 3 bytes for standard instruction
+                break;
+            }
+            fscanf(fp4, "%s", code);  // Read the next opcode in the table
+        }
+
+        // Handle specific directives: WORD, RESW, RESB, BYTE
+        if (strcmp(opcode, "WORD") == 0)
+            locctr += 3;  // WORD occupies 3 bytes
+        else if (strcmp(opcode, "RESW") == 0)
+            locctr += (3 * atoi(operand));  // RESW reserves multiple words
+        else if (strcmp(opcode, "RESB") == 0)
+            locctr += atoi(operand);  // RESB reserves specified number of bytes
+        else if (strcmp(opcode, "BYTE") == 0)
+            ++locctr;  // BYTE usually reserves 1 byte
+
+        // Write label, opcode, and operand to intermediate file
+        fprintf(fp3, "%s\t%s\t%s\n", label, opcode, operand);
+        
+        // Read the next line from the input file
+        fscanf(fp1, "%s%s%s", label, opcode, operand);
+    }
+
+    // Final line after encountering the "END" directive
+    fprintf(fp3, "%d\t%s\t%s\t%s\n", locctr, label, opcode, operand);
+    
+    // Calculate the length of the program by subtracting the start address from the final locctr
+    length = locctr - start;
+    printf("The length of the program is %d", length);  // Output the program length
+
+    // Close all opened files
     fclose(fp1);
     fclose(fp2);
     fclose(fp3);
     fclose(fp4);
 
-    getchar();
+    getchar();  // Wait for user input before closing (useful in some environments)
     return 0;
 }
