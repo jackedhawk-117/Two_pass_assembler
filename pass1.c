@@ -5,7 +5,7 @@
 /*
     authors:    iimashfaaq
                 prachidhingra09
-                jackedhawk117
+                jackedhawk-117
 */
 
 int main() {
