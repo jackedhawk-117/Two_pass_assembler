@@ -4,7 +4,7 @@
 /*
     authors:    iimashfaaq
                 prachidhingra09
-                jackedhawk117
+                jackedhawk-117
 */
 
 // Function to reverse a string in place
