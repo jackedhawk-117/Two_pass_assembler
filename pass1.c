@@ -14,13 +14,14 @@ int main() {
     int locctr, start, length;
     
     // File pointers to handle input and output files
-    FILE *fp1, *fp2, *fp3, *fp4;
+    FILE *fp1, *fp2, *fp3, *fp4, *fp5;  // Add fp5 for length.txt
     
-    // Open files: input, symbol table, intermediate, and opcode table
+    // Open files: input, symbol table, intermediate, opcode table, and length output
     fp1 = fopen("input.txt", "r");     // Assembly program input
     fp2 = fopen("symtab.txt", "w");    // Symbol table output
     fp3 = fopen("intermediate.txt", "w"); // Intermediate file output
     fp4 = fopen("opTab.txt", "r");     // Opcode table
+    fp5 = fopen("length.txt", "w");    // Length file output
 
     // Read the first line of input (expected to contain the START directive)
     fscanf(fp1, "%s%s%s", label, opcode, operand);
@@ -88,12 +89,16 @@ int main() {
     length = locctr - start;
     printf("The length of the program is %d", length);  // Output the program length
 
+    // Write the length to length.txt
+    fprintf(fp5, "%d", length);
+
     // Close all opened files
     fclose(fp1);
     fclose(fp2);
     fclose(fp3);
     fclose(fp4);
+    fclose(fp5);  // Close the length file
 
     getchar();  // Wait for user input before closing (useful in some environments)
     return 0;
-}
+} // store length to length.txt
