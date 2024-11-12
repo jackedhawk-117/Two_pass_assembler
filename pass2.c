@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+
 /*
     authors:    iimashfaaq
                 prachidhingra09
@@ -8,48 +9,12 @@
 */
 
 // Function to reverse a string in place
-void strreverse(char* begin, char* end) {
-    char aux;
-    // Swap characters from start and end until middle is reached
-    while (end > begin) {
-        aux = *end;
-        *end-- = *begin;
-        *begin++ = aux;
-    }
-}
-
-// Function to convert an integer to a string with a specified base
-void itoa(int value, char* str, int base) {
-    static char num[] = "0123456789abcdefghijklmnopqrstuvwxyz"; // Base symbols
-    char* wstr = str; // Pointer to write position
-    int sign; // Variable to store the sign of the number
-    div_t res; // Variable to store division result
-
-    // Check if the base is valid (2 to 35)
-    if (base < 2 || base > 35) { *wstr = '\0'; return; }
-
-    // If value is negative, store the sign and make value positive
-    if ((sign = value) < 0) value = -value;
-
-    // Convert the number to the given base and store in reverse order
-    do {
-        res = div(value, base); // Divide and get quotient and remainder
-        *wstr++ = num[res.rem]; // Store remainder character
-    } while ((value = res.quot)); // Repeat until quotient is 0
-    
-    // Add minus sign if number was negative
-    if (sign < 0) *wstr++ = '-';
-    *wstr = '\0'; // Null-terminate the string
-
-    // Reverse the string to get the correct order
-    strreverse(str, wstr - 1);
-}
 
 int main() {
     // Declare variables for string storage and reading file contents
     char a[10], ad[10], label[10], opcode[10], operand[10], mnemonic[10], symbol[10];
-    int i, address, sa, code, add, len, actual_len, tcount = 0;
-    FILE *fp2, *fp3, *fp4, *fp5; // File pointers for file handling
+    int i, address, sa, code, add, len, actual_len, tcount = 0, prog_len;
+    FILE *fp2, *fp3, *fp4, *fp5, *fp6; // File pointers for file handling
 
     // Open the symbol table file and check for errors
     fp2 = fopen("symtab.txt", "r");
@@ -67,13 +32,21 @@ int main() {
     fp5 = fopen("out.txt", "w");
     if (!fp5) { perror("Failed to open out.txt"); fclose(fp2); fclose(fp3); fclose(fp4); return 1; }
 
+    // Open the length.txt file to read the program length
+    fp6 = fopen("length.txt", "r");
+    if (!fp6) { perror("Failed to open length.txt"); fclose(fp2); fclose(fp3); fclose(fp4); fclose(fp5); return 1; }
+
+    // Read the program length from length.txt
+    fscanf(fp6, "%d", &prog_len);
+    fclose(fp6); // Close the length.txt file
+
     // Read the first line from the intermediate file (label, opcode, operand)
     fscanf(fp3, "%s%s%s", label, opcode, operand);
 
     // If the opcode is "START", initialize the program start address
     if (strcmp(opcode, "START") == 0) {
-        // Print the header record to the output file
-        fprintf(fp5, "H***^%s^000023\n", operand); // "000023" is a placeholder for program length
+        // Print the header record to the output file with the length read from length.txt
+        fprintf(fp5, "H***^%s^%06X\n", operand, prog_len); // Include length in header record as hex
         // Read next line with the address and other fields
         fscanf(fp3, "%d%s%s%s", &address, label, opcode, operand);
         sa = address; // Store the start address
@@ -88,15 +61,15 @@ int main() {
             len = strlen(operand); // Length of the operand
             actual_len = len - 3; // Adjust for starting and ending delimiters
             for (i = 2; i < (actual_len + 2); i++) { // Process each character
-                itoa(operand[i], ad, 16); // Convert character to hex
+                sprintf(ad, "%02X", operand[i]); // Convert character to hex using sprintf
                 fprintf(fp5, "%s", ad); // Write hex value to output
                 tcount++; // Increment text record count
             }
         } 
         // If the opcode is "WORD"
         else if (strcmp(opcode, "WORD") == 0) {
-            itoa(atoi(operand), a, 16); // Convert operand to integer, then to hex
-            fprintf(fp5, "00000%s", a); // Write with padding to output file
+            sprintf(a, "%05X", atoi(operand)); // Convert operand to integer and then to hex using sprintf
+            fprintf(fp5, "%s", a); // Write the hex value to output file
             tcount += 3; // WORD occupies 3 bytes
         } 
         // If the opcode is "RESB" or "RESW", skip them in the object program
